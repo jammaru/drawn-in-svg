@@ -1,6 +1,6 @@
 # An illustration, drawn in SVG from rough sketch to finish
 
-I had Gemini 4 Argon turn one illustration into SVG. Paths are stacked the way a person draws: rough construction, flat color, shading, then the finish. The lines and the color are SVG elements. The clip below is that SVG being drawn, next to the original.
+I made all of this with Gemini 4 Argon: the SVG, the scripts that build it batch by batch, the comparison video, and the viewer. Paths are stacked the way a person draws: rough construction, flat color, shading, then the finish. The lines and the color are SVG elements. The clip below is that SVG being drawn, next to the original.
 
 Left is the source illustration. Right is the SVG.
 
@@ -60,16 +60,17 @@ svg
 
 Each `g` has a `data-title` with the name of that stage. Batches 1 and 2 are strokes: circles, ellipses, straight lines, and open paths with `fill="none"`. They are the head sphere, crosshairs, joints, the sign's box, and contour lines taken from the edges of the illustration. Their opacity is lowered as the color arrives. In the finished file it is 0, so the lines are still in the source and do not show.
 
-From batch 3 on, the elements are filled paths. A path is a closed outline of quadratic Bézier curves (`Q`), with one flat `fill`. There is no gradient, filter, embedded image, or `<text>` element. The letters on the LGTM sign are paths too.
+From batch 3 on, every element is a closed path with one flat `fill`. There is no SVG gradient, filter, embedded image, or `<text>` element. The letters on the LGTM sign are paths too. Batches 3, 4, 5, and 7 are quadratic Bézier outlines only (`Q`). Batches 6, 8, 9, and 10 also contain straight segments (`L`), where a small outline simplified down to a few corners.
 
 ## How it was made
 
-The file was not written in one pass. `scripts/run_batches.py` adds one group, renders the SVG, compares that render with the original illustration, and uses the difference to choose the next group. The comparison video is those partial SVGs, rendered in order. `lgtm_character_animated.svg` is the same groups, revealed with CSS.
+Gemini 4 Argon wrote the pipeline and ran it. The file was not written in one pass. `scripts/run_batches.py` adds one group at a time. The comparison video is those partial SVGs, rendered in order. `lgtm_character_animated.svg` is the same groups, revealed with CSS.
 
-1. The first two groups are the rough drawing. Construction marks are placed to match the figure. Edge contours from the illustration are simplified and stored as open stroke paths.
-2. Each later group splits the original into small regions (SLIC superpixels). A region is kept only when painting it in its average color reduces the difference from the original. The outline of that region becomes one filled path. Larger shapes go down before smaller ones.
-3. The face, the sign, the bells, and the ribbons are weighted more heavily. Pixels that still disagree with the original are picked up afterward as smaller patches. The last batches are mostly those leftover spots: eyelashes, the iris, letter edges, catchlights.
-4. After every batch the render is scored against the original. Those scores are in `output/drawing_process_metadata.json`.
+1. Batches 1 and 2 do not look at the difference from the original. Batch 1 is the construction drawing: head sphere, crosshairs, joints, the sign's box. Batch 2 is open contour lines taken from the edges of the illustration.
+2. Batch 3 splits the foreground with SLIC and lays down large flat colors. The broad silhouette goes down first, then the other patches from the top of the picture downward. It does not drop a patch because the error failed to improve.
+3. From batch 4, a patch is kept only when painting it in its average color reduces the difference from the original. Batches 4, 5, and 7 do this over the whole figure. Batches 6 and 8 do it again with extra weight on the face, the sign, the bells, and the ribbons, then add small spots that still disagree.
+4. Batches 9 and 10 are not another SLIC pass. They take only the small spots that still differ: eyelashes, the iris, letter edges, catchlights.
+5. After every batch, including the first three, the render is scored against the original. Those scores are in `output/drawing_process_metadata.json`. The score is a record. It starts choosing the next patches at batch 4.
 
 ## Drawing order
 
@@ -111,7 +112,7 @@ Four stages, ten batches, in the order a person would draw. The counts are eleme
 | --- | --- | ---: | ---: |
 | 5 | Hair overlap, hoodie folds, skirt gathers, knee-sock shading | 1,062 | 2,001 |
 | 6 | Eyes, mouth, bells, ribbons, pompoms, the LGTM letters and frame | 1,383 | 3,384 |
-| 7 | Hair strands, frills, midtone gradients | 1,450 | 4,834 |
+| 7 | Hair strands, frills, and midtones built by stacking flat patches | 1,450 | 4,834 |
 
 ### 4. Check the whole picture, then finish
 
