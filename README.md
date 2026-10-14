@@ -46,6 +46,31 @@ npm run dev
 
 Open http://127.0.0.1:43123. The files in `public/` are the same set as `output/`, served by the viewer.
 
+## What the SVG is
+
+`output/lgtm_character_final.svg` is one file. A background rectangle, then ten groups. Each group is one batch, and a later group is painted on top of the earlier ones. Nothing underneath is deleted.
+
+```text
+svg
+  rect                          canvas, #fcfbf8
+  g#batch-1-rough-atari        construction marks
+  g#batch-2-rough-lineart      rough contour lines
+  g#batch-3 … g#batch-10       filled color patches, finer each time
+```
+
+Each `g` has a `data-title` with the name of that stage. Batches 1 and 2 are strokes: circles, ellipses, straight lines, and open paths with `fill="none"`. They are the head sphere, crosshairs, joints, the sign's box, and contour lines taken from the edges of the illustration. Their opacity is lowered as the color arrives. In the finished file it is 0, so the lines are still in the source and do not show.
+
+From batch 3 on, the elements are filled paths. A path is a closed outline of quadratic Bézier curves (`Q`), with one flat `fill`. There is no gradient, filter, embedded image, or `<text>` element. The letters on the LGTM sign are paths too.
+
+## How it was made
+
+The file was not written in one pass. `scripts/run_batches.py` adds one group, renders the SVG, compares that render with the original illustration, and uses the difference to choose the next group. The comparison video is those partial SVGs, rendered in order. `lgtm_character_animated.svg` is the same groups, revealed with CSS.
+
+1. The first two groups are the rough drawing. Construction marks are placed to match the figure. Edge contours from the illustration are simplified and stored as open stroke paths.
+2. Each later group splits the original into small regions (SLIC superpixels). A region is kept only when painting it in its average color reduces the difference from the original. The outline of that region becomes one filled path. Larger shapes go down before smaller ones.
+3. The face, the sign, the bells, and the ribbons are weighted more heavily. Pixels that still disagree with the original are picked up afterward as smaller patches. The last batches are mostly those leftover spots: eyelashes, the iris, letter edges, catchlights.
+4. After every batch the render is scored against the original. Those scores are in `output/drawing_process_metadata.json`.
+
 ## Drawing order
 
 Four stages, ten batches, in the order a person would draw. The counts are elements added in that batch, and the running total at the end of it. The running total includes one canvas background rectangle, so batch 1 adds 75 elements and the total is 76. Each stage is saved as `output/batches/batch_01.svg` through `batch_10.svg`.
