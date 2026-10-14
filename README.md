@@ -143,3 +143,7 @@ Element counts and the difference from the original (MAE / PSNR) are in [`output
 | `output/batches/batch_01.svg` … `batch_10.svg` | SVG and PNG at the end of each batch |
 | `public/` | The same files, served by the viewer |
 | `assets/` | The original illustration |
+
+## License
+
+[MIT](LICENSE). Copyright (c) 2026 jammaru.
